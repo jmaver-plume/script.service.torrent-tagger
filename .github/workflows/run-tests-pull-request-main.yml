@@ -1,0 +1,16 @@
+name: run-tests-pull-request-main
+run-name: Run tests on pull request when target is main
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+jobs:
+  check-bats-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - name: Run tests
+        run: python3 -m unittest discover -s .
