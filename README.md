@@ -29,7 +29,7 @@ If you have the following Downloads directory structure
 
 ```shell
 .
-|-- /path/to/downloads
+|-- /path/to/torrent_downloads
 |   |-- Counterpart.S01.2160p.STAN.WEB-DL.x265.10bit.HDR.AAC5.1-WHOSNEXT[rartv]
 |       |-- counterpart.s01e01.hdr.2160p.web.h265-whosnext.mkv
 |       |-- counterpart.s01e02.hdr.2160p.web.h265-whosnext.mkv
