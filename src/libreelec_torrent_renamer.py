@@ -28,7 +28,7 @@ class ParseMovieException(Exception):
     pass
 
 
-def get_tmdb_name(original):
+def get_movie_name(original):
     split_on_quality = re.split(r'(2160p|1080p|720p)', original)
     if not(len(split_on_quality) > 1):
         raise ParseMovieException(f'Title {original} does not have a valid quality.')
@@ -62,7 +62,7 @@ def find_tv_show_file(dirs):
 
 
 def handle_movie_dir(movie_dir):
-    tmdb_name = get_tmdb_name(movie_dir)
+    tmdb_name = get_movie_name(movie_dir)
 
     symbolic_movie_dir = f'{MOVIES_SYMBOLIC_PATH}/{tmdb_name}'
     if not(os.path.exists(symbolic_movie_dir)):
