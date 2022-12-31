@@ -7,6 +7,7 @@ from src.libreelec_torrent_renamer import main
 
 class TestIsMovieDir(unittest.TestCase):
     def test_should_create_new_directories(self):
+        print(__file__)
         downloads_path = os.path.realpath('tests/integration/downloads')
         movies_symbolic_path = os.path.abspath('/tmp/directories/movies')
         tv_shows_symbolic_path = os.path.abspath('/tmp/directories/tv_shows')
