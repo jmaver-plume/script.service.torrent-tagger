@@ -2,7 +2,6 @@ name: run-tests-pull-request-main
 run-name: Run tests on pull request when target is main
 on:
   pull_request:
-    types: [opened]
     branches: [main]
 jobs:
   check-bats-version:
