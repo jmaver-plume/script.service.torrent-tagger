@@ -1,6 +1,6 @@
 import unittest
 
-from main import is_tv_show_dir
+from src.libreelec_torrent_renamer import is_tv_show_dir
 
 
 class TestIsTvShowDir(unittest.TestCase):

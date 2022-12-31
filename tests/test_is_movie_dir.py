@@ -1,6 +1,6 @@
 import unittest
 
-from main import is_movie_dir
+from src.libreelec_torrent_renamer import is_movie_dir
 
 
 class TestIsMovieDir(unittest.TestCase):
