@@ -1,11 +1,8 @@
 import logging
 import re
 import os
+import shutil
 import traceback
-
-DOWNLOADS_PATH = os.getenv("DOWNLOADS_PATH")
-MOVIES_SYMBOLIC_PATH = os.getenv("MOVIES_SYMBOLIC_PATH")
-TV_SHOWS_SYMBOLIC_PATH = os.getenv("TV_SHOWS_SYMBOLIC_PATH")
 
 
 def is_tv_show_episode_dir(dir_name):
@@ -13,7 +10,7 @@ def is_tv_show_episode_dir(dir_name):
 
 
 def is_tv_show_season_dir(dir_name):
-    return not(is_tv_show_episode_dir(dir_name)) and bool(re.search('S[0-9]{2}', dir_name))
+    return not(is_tv_show_episode_dir(dir_name)) and bool(re.search('[sS][0-9]{2}', dir_name))
 
 
 def is_tv_show_dir(dir_name):
@@ -61,63 +58,63 @@ def find_tv_show_file(dirs):
     return os.path.splitext(src_name)
 
 
-def handle_movie_dir(movie_dir):
+def handle_movie_dir(movie_dir, downloads_path, movies_symbolic_path):
     tmdb_name = get_movie_name(movie_dir)
 
-    symbolic_movie_dir = f'{MOVIES_SYMBOLIC_PATH}/{tmdb_name}'
+    symbolic_movie_dir = f'{movies_symbolic_path}/{tmdb_name}'
     if not(os.path.exists(symbolic_movie_dir)):
         os.makedirs(symbolic_movie_dir)
 
     # Symbolic link the video file
-    src_name, src_file_extension = find_video_file(movie_dir, os.listdir(f'{DOWNLOADS_PATH}/{movie_dir}'))
-    src = f'{DOWNLOADS_PATH}/{movie_dir}/{movie_dir}{src_file_extension}'
-    dest = f'{MOVIES_SYMBOLIC_PATH}/{tmdb_name}/{tmdb_name}{src_file_extension}'
+    src_name, src_file_extension = find_video_file(movie_dir, os.listdir(f'{downloads_path}/{movie_dir}'))
+    src = f'{downloads_path}/{movie_dir}/{movie_dir}{src_file_extension}'
+    dest = f'{movies_symbolic_path}/{tmdb_name}/{tmdb_name}{src_file_extension}'
     os.symlink(src, dest)
 
     # Symbolic link all other files except the video file
-    for v in os.listdir(f'{DOWNLOADS_PATH}/{movie_dir}'):
+    for v in os.listdir(f'{downloads_path}/{movie_dir}'):
         if movie_dir not in v:
-            os.symlink(f'{DOWNLOADS_PATH}/{movie_dir}/{v}', f'{MOVIES_SYMBOLIC_PATH}/{tmdb_name}/{v}')
+            os.symlink(f'{downloads_path}/{movie_dir}/{v}', f'{movies_symbolic_path}/{tmdb_name}/{v}')
 
 
-def handle_movie_dirs(movie_dirs):
+def handle_movie_dirs(movie_dirs, downloads_path, movies_symbolic_path):
     for movie_dir in movie_dirs:
         try:
-            handle_movie_dir(movie_dir)
+            handle_movie_dir(movie_dir, downloads_path, movies_symbolic_path)
         except Exception as e:
             logging.error(traceback.format_exc())
 
 
-def create_tv_show_name_folder(name):
-    s_root_folder = f'{TV_SHOWS_SYMBOLIC_PATH}/{name}'
+def create_tv_show_name_folder(name, tv_shows_symbolic_path):
+    s_root_folder = f'{tv_shows_symbolic_path}/{name}'
     if not (os.path.exists(s_root_folder)):
         os.mkdir(s_root_folder)
     return s_root_folder
 
 
-def create_tv_show_season_folder(name, season):
-    s_season_folder = f'{TV_SHOWS_SYMBOLIC_PATH}/{name}/Season {season}'
+def create_tv_show_season_folder(name, season, tv_shows_symbolic_path):
+    s_season_folder = f'{tv_shows_symbolic_path}/{name}/Season {season}'
     if not (os.path.exists(s_season_folder)):
         os.mkdir(s_season_folder)
     return s_season_folder
 
 
-def handle_tv_show_season_dir(tv_show_dir):
-    name, season = re.match(r'(.+)\.S([0-9]{2}).*', tv_show_dir).groups()
+def handle_tv_show_season_dir(tv_show_dir, downloads_path, tv_shows_symbolic_path):
+    name, season = re.match(r'(.+)\.[sS]([0-9]{2}).*', tv_show_dir).groups()
     name = name.replace('.', ' ')
     season = int(season)
 
-    create_tv_show_name_folder(name)
-    s_season_folder = create_tv_show_season_folder(name, season)
+    create_tv_show_name_folder(name, tv_shows_symbolic_path)
+    s_season_folder = create_tv_show_season_folder(name, season, tv_shows_symbolic_path)
 
     # Create symlink for each episode
-    tv_show_dir_absolute_path = f'{DOWNLOADS_PATH}/{tv_show_dir}'
+    tv_show_dir_absolute_path = f'{downloads_path}/{tv_show_dir}'
     for episode in os.listdir(tv_show_dir_absolute_path):
         if is_tv_show_episode_dir(episode):
-            v = re.match(r'.*(S[0-9]{2}E[0-9]{2}).*', episode).groups()
+            v = re.match(r'.*([sS][0-9]{2}[eE][0-9]{2}).*', episode).groups()
             src = f'{tv_show_dir_absolute_path}/{episode}'
             _, ext = os.path.splitext(episode)
-            dest = f'{s_season_folder}/{name} {v[0]}{ext}'
+            dest = f'{s_season_folder}/{name} {v[0].upper()}{ext}'
             os.symlink(src, dest)
 
     # Create symlink for Subs
@@ -125,70 +122,83 @@ def handle_tv_show_season_dir(tv_show_dir):
         sub_folders = [v for v in os.listdir(f'{tv_show_dir_absolute_path}/Subs')]
         print(sub_folders)
         for folder in sub_folders:
-            v = re.match(r'.*(S[0-9]{2}E[0-9]{2}).*', folder).groups()
+            v = re.match(r'.*([sS][0-9]{2}[eE][0-9]{2}).*', folder).groups()
             if len(v) != 1:
                 print('Not found')
                 continue
             srt_files = [v for v in os.listdir(f'{tv_show_dir_absolute_path}/Subs/{folder}') if bool(re.search(r'.*\.srt', v))]
             for srt_file in srt_files:
                 src = f'{tv_show_dir_absolute_path}/Subs/{folder}/{srt_file}'
-                dest = f'{s_season_folder}/{name} {v[0]}_{srt_file}'
+                dest = f'{s_season_folder}/{name} {v[0].upper()}_{srt_file}'
                 os.symlink(src, dest)
 
 
-def handle_tv_show_season_dirs(dirs):
+def handle_tv_show_season_dirs(dirs, downloads_path, tv_shows_symbolic_path):
     for _dir in dirs:
         try:
-            handle_tv_show_season_dir(_dir)
+            handle_tv_show_season_dir(_dir, downloads_path, tv_shows_symbolic_path)
         except Exception as e:
             logging.error(traceback.format_exc())
 
 
-def handle_tv_show_episode_dir(tv_show_dir):
-    name, season, episode = re.match(r'(.+)\.S([0-9]{2})(E[0-9]{2}).*', tv_show_dir).groups()
+def handle_tv_show_episode_dir(tv_show_dir, downloads_path, tv_shows_symbolic_path):
+    name, season, episode = re.match(r'(.+)\.[sS]([0-9]{2})([eE][0-9]{2}).*', tv_show_dir).groups()
     name = name.replace('.', ' ')
     season = int(season)
 
-    create_tv_show_name_folder(name)
-    s_season_folder = create_tv_show_season_folder(name, season)
+    create_tv_show_name_folder(name, tv_shows_symbolic_path)
+    s_season_folder = create_tv_show_season_folder(name, season, tv_shows_symbolic_path)
 
     # Symlink episode
-    src_name, src_file_extension = find_tv_show_file(os.listdir(f'{DOWNLOADS_PATH}/{tv_show_dir}'))
+    src_name, src_file_extension = find_tv_show_file(os.listdir(f'{downloads_path}/{tv_show_dir}'))
     v = re.match(r'.*([sS][0-9]{2}[eE][0-9]{2}).*', src_name).groups()
-    src = f'{DOWNLOADS_PATH}/{tv_show_dir}/{src_name}{src_file_extension}'
+    src = f'{downloads_path}/{tv_show_dir}/{src_name}{src_file_extension}'
     dest = f'{s_season_folder}/{name} {v[0].upper()}{src_file_extension}' # TODO: move to same function
     os.symlink(src, dest)
 
 
-def handle_tv_show_episode_dirs(dirs):
+def handle_tv_show_episode_dirs(dirs, downloads_path, tv_shows_symbolic_path):
     for _dir in dirs:
         try:
-            handle_tv_show_episode_dir(_dir)
+            handle_tv_show_episode_dir(_dir, downloads_path, tv_shows_symbolic_path)
         except Exception as e:
             logging.error(traceback.format_exc())
 
 
-def init():
-    if not(os.path.exists(MOVIES_SYMBOLIC_PATH)):
-        os.makedirs(MOVIES_SYMBOLIC_PATH)
+def init(movies_symbolic_path, tv_shows_symbolic_path):
+    if os.path.exists(movies_symbolic_path):
+        shutil.rmtree(movies_symbolic_path)
 
-    if not(os.path.exists(TV_SHOWS_SYMBOLIC_PATH)):
-        os.makedirs(TV_SHOWS_SYMBOLIC_PATH)
+    if os.path.exists(tv_shows_symbolic_path):
+        shutil.rmtree(tv_shows_symbolic_path)
+
+    while os.path.exists(movies_symbolic_path) or os.path.exists(tv_shows_symbolic_path):
+        pass
+
+    os.makedirs(movies_symbolic_path)
+    os.makedirs(tv_shows_symbolic_path)
 
 
-def main():
-    init()
-    dirs = os.listdir(DOWNLOADS_PATH)
+def main(downloads_path, movies_symbolic_path, tv_shows_symbolic_path):
+    init(movies_symbolic_path, tv_shows_symbolic_path)
+    dirs = os.listdir(downloads_path)
 
     movie_dirs = list(filter(is_movie_dir, dirs))
-    handle_movie_dirs(movie_dirs)
+    handle_movie_dirs(movie_dirs, downloads_path, movies_symbolic_path)
 
     tv_show_season_dirs = list(filter(is_tv_show_season_dir, dirs))
-    handle_tv_show_season_dirs(tv_show_season_dirs)
+    handle_tv_show_season_dirs(tv_show_season_dirs, downloads_path, tv_shows_symbolic_path)
 
     tv_show_episode_dirs = list(filter(is_tv_show_episode_dir, dirs))
-    handle_tv_show_episode_dirs(tv_show_episode_dirs)
+    handle_tv_show_episode_dirs(tv_show_episode_dirs, downloads_path, tv_shows_symbolic_path)
 
 
 if __name__ == '__main__':
-    main()
+    DOWNLOADS_PATH = os.getenv("DOWNLOADS_PATH")
+    MOVIES_SYMBOLIC_PATH = os.getenv("MOVIES_SYMBOLIC_PATH")
+    TV_SHOWS_SYMBOLIC_PATH = os.getenv("TV_SHOWS_SYMBOLIC_PATH")
+    main(
+        downloads_path=DOWNLOADS_PATH,
+        movies_symbolic_path=MOVIES_SYMBOLIC_PATH,
+        tv_shows_symbolic_path=TV_SHOWS_SYMBOLIC_PATH
+    )
