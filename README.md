@@ -22,7 +22,7 @@ Execute the script in the following way:
 DOWNLOADS_PATH="/path/to/downloads/complete" \
 MOVIES_SYMBOLIC_PATH="/path/to/movies" \
 TV_SHOWS_SYMBOLIC_PATH="/path/to/tv_shows" \
-python libreelec_torrent_renamer.py
+python movie_linker.py
 ```
 
 If you have the following Downloads directory structure
