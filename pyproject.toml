@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "libreelec_torrent_renamer"
+description = "CLI tool which creates new directories for TV Shows and Movies with proper naming for LibreELEC scraping."
+requires-python = ">=3.7"
+version = "1.0.0"
+license = {text = "MIT"}
+
+[project.scripts]
+libreelec-torrent-linker = "libreelec_torrent_linker:main"
