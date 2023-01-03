@@ -5,6 +5,7 @@
 Movies or a tv shows downloaded from a torrent site (e.g., RARBG) are named in such a way that scraping does not work.  
 This script creates new directories and symbol links to files with proper naming, such that scraping software can work correctly.
 
+The packaged is designed to properly parse and link torrents from RARBG.
 
 ## Running tests
 
@@ -13,16 +14,23 @@ python3 -m unittest discover -s .
 ```
 
 
-## How to use
+## Install
 
-First copy and paste the script to your LibreELEC using something like `scp`. 
+The package can be installed as a pip package.
+
+```shell
+pip install git+https://github.com/jmaver-plume/libreelec-torrent-linker.git
+```
+
+## Usage
 
 Execute the script in the following way:
 ```shell
-DOWNLOADS_PATH="/path/to/downloads/complete" \
-MOVIES_SYMBOLIC_PATH="/path/to/movies" \
-TV_SHOWS_SYMBOLIC_PATH="/path/to/tv_shows" \
-python movie_linker.py
+libreelec-torrent-linker -h
+
+libreelec-torrent-linker --downloads-path "/path/to/downloads/complete" \
+--movies-path "/path/to/movies" \
+--tv-shows-path "/path/to/tv_shows"  
 ```
 
 If you have the following Downloads directory structure
@@ -58,13 +66,10 @@ it will create the following directories and files.
 |           |-- Counterpart S01E03.mkv
 ```
 
-You can then create movie and tv show libraries.
+You can then create separate movie and tv show video sources in Kodi.
 
 ## TODO
 
-- [ ] Add `rm -rf MOVIES_SYMBOLIC_PATH TV_SHOWS_SYMBOLIC_PATH` at the start of the script to make script idempotent.
-- [ ] Write "how to add script to exec"
-- [ ] Write "how to enable automatic scraping on start libreelec"
+- [ ] Write "how to enable automatic scraping on start LibreELEC"
 - [ ] Add section "how to clean up library after deleting a file"
-- [ ] Write proper tests
-- [ ] Add GitHub actions on pull request run tests and run linter
+- [ ] Add linter
