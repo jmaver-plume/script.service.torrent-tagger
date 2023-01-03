@@ -5,8 +5,8 @@ import os
 import libreelec_torrent_linker
 
 
-class TestIsMovieDir(unittest.TestCase):
-    def test_should_create_new_directories(self):
+class TestLinker(unittest.TestCase):
+    def test_should_create_new_directories_and_link_files(self):
         downloads_path = os.path.abspath(f'{pathlib.Path(__file__).parent.resolve()}/torrent_downloads')
         movies_path = os.path.abspath('/tmp/directories/movies')
         tv_shows_path = os.path.abspath('/tmp/directories/tv_shows')
@@ -34,10 +34,13 @@ class TestIsMovieDir(unittest.TestCase):
         self.assertTrue(os.path.exists(tv_shows_path))
         self.assertTrue(os.path.exists(f'{tv_shows_path}/The Patient'))
         self.assertTrue(os.path.exists(f'{tv_shows_path}/The Patient/Season 1'))
-        self.assertTrue(os.path.exists(f'{tv_shows_path}/The Patient/Season 1/The Patient S01E02.mkv'))
-        self.assertTrue(os.path.exists(f'{tv_shows_path}/The Patient/Season 1/The Patient S01E03.mp4'))
-        # TODO: Not working, fix.
-        # self.assertTrue(os.path.exists(f'{tv_shows_path}/The Patient/Season 1/The Patient S01E03_2_English.srt'))
+        self.assertTrue(os.path.islink(f'{tv_shows_path}/The Patient/Season 1/The Patient S01E02.mkv'))
+        self.assertTrue(os.path.islink(f'{tv_shows_path}/The Patient/Season 1/The Patient S01E03.mp4'))
+        self.assertTrue(os.path.exists(f'{tv_shows_path}/The Patient/Season 1/The Patient S01E03 Subs'))
+        self.assertTrue(os.path.islink(f'{tv_shows_path}/The Patient/Season 1/The Patient S01E04.mp4'))
+        self.assertTrue(os.path.exists(f'{tv_shows_path}/The Patient/Season 1/The Patient S01E04 2_English.srt'))
+        self.assertTrue(os.path.exists(f'{tv_shows_path}/The Patient/Season 1/The Patient S01E04 3_English.srt'))
+
 
 
 if __name__ == '__main__':
