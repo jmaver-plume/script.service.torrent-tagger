@@ -39,6 +39,7 @@ class EdgeCaseNameHandler:
             return EdgeCaseNameHandler.edge_cases[name]
         return name
 
+
 class File:
     def __init__(self, filename, parent):
         self.filename = filename
@@ -60,28 +61,53 @@ class AbstractLinker(ABC):
         self.logging = logging.getLogger(self.__class__.__name__)
 
     def link(self):
-        for item in self.scanner.scan():
-            self._link_item(item)
+        for directory in self.scanner.scan():
+            self._link_directory(directory)
 
     @abstractmethod
-    def _link_item(self, item):
+    def _link_directory(self, directory):
         pass
 
 
-class Scanner:
+class AbstractScanner(ABC):
     def __init__(self, path):
         self.path = path
         self.logging = logging.getLogger(self.__class__.__name__)
 
+    def scan(self):
+        all_directories = os.listdir(self.path)
+        filtered_directories = self._filter_directories(all_directories)
+        mapped_directories = self._map_directories(filtered_directories)
+        return mapped_directories
 
-class MovieDirectory:
+    @abstractmethod
+    def _filter_directories(self, directories):
+        pass
+
+    @abstractmethod
+    def _map_directories(self, directories):
+        pass
+
+
+class AbstractDirectory(ABC):
     def __init__(self, parent_directory, directory_name, children):
         self.parent_directory = parent_directory
         self.directory_name = directory_name
         self.children = children
         self.directory = f'{self.parent_directory}/{self.directory_name}'
 
-    def get_tmdb_movie(self, new_directory):
+    @abstractmethod
+    def get_tmdb_directory(self, tmdb_directory_path):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def is_valid(directory):
+        pass
+
+
+class MovieDirectory(AbstractDirectory):
+    def get_tmdb_directory(self, tmdb_directory_path):
         # https: // kodi.wiki / view / Naming_video_files / movies
         def _get_tmdb_name():
             split_on_quality = re.split(r'(2160p|1080p|720p)', self.directory_name)
@@ -99,14 +125,14 @@ class MovieDirectory:
                 if child.is_video_file():
                     _, ext = os.path.splitext(child.filename)
                     filename = f'{_tmdb_name}{ext}'
-                    children.append(File(filename, f'{new_directory}/{_tmdb_name}'))
+                    children.append(File(filename, f'{tmdb_directory_path}/{_tmdb_name}'))
                 else:
-                    children.append(File(child.filename, f'{new_directory}/{_tmdb_name}'))
+                    children.append(File(child.filename, f'{tmdb_directory_path}/{_tmdb_name}'))
             return children
 
         tmdb_name = _get_tmdb_name()
         return MovieDirectory(
-            parent_directory=new_directory,
+            parent_directory=tmdb_directory_path,
             directory_name=tmdb_name,
             children=_get_children(tmdb_name),
         )
@@ -128,13 +154,12 @@ class MovieDirectory:
         return True
 
 
-class MovieScanner(Scanner):
-    def scan(self):
-        """Returns a list of Movies in a directory"""
-        all_directories = os.listdir(self.path)
-        movie_directories = list(filter(lambda d: MovieDirectory.is_valid(f'{self.path}/{d}'), all_directories))
-        scanned_movie_directories = [self._scan_movie_directory(d) for d in movie_directories]
-        return scanned_movie_directories
+class MovieScanner(AbstractScanner):
+    def _map_directories(self, directories):
+        return [self._scan_movie_directory(d) for d in directories]
+
+    def _filter_directories(self, directories):
+        return list(filter(lambda d: MovieDirectory.is_valid(f'{self.path}/{d}'), directories))
 
     def _scan_movie_directory(self, movie_directory):
         parent = f'{self.path}/{movie_directory}'
@@ -151,13 +176,16 @@ class MovieLinker(AbstractLinker):
     def __init__(self, new_path, scanner):
         super().__init__(new_path, scanner)
 
-    def _link_item(self, movie):
-        tmdb_movie = movie.get_tmdb_movie(self.new_path)
-        os.makedirs(tmdb_movie.directory)
-        self.logging.debug(f'Created directory {tmdb_movie.directory}.')
-        for i, _ in enumerate(movie.children):
-            os.symlink(movie.children[i].get_path(), tmdb_movie.children[i].get_path())
-            self.logging.debug(f'Linked src={movie.children[i].get_path()} to dest={tmdb_movie.children[i].get_path()}')
+    def _link_directory(self, directory):
+        tmdb_directory = directory.get_tmdb_directory(self.new_path)
+        os.makedirs(tmdb_directory.directory)
+        self.logging.debug(f'Created directory {tmdb_directory.directory}.')
+        for i, _ in enumerate(directory.children):
+            os.symlink(directory.children[i].get_path(), tmdb_directory.children[i].get_path())
+            self.logging.debug(
+                'Linked src={0} to dest={1}.'
+                .format(directory.children[i].get_path(), tmdb_directory.children[i].get_path())
+            )
 
 
 class TMDBTvEpisode:
@@ -174,14 +202,8 @@ class TMDBTvSeason:
         self.children = children
 
 
-class TvShowEpisodeDirectory:
-    def __init__(self, parent_directory, directory_name, children):
-        self.parent_directory = parent_directory
-        self.directory_name = directory_name
-        self.children = children
-        self.directory = f'{self.parent_directory}/{self.directory_name}'
-
-    def get_tmdb_episode(self, new_directory):
+class TvShowEpisodeDirectory(AbstractDirectory):
+    def get_tmdb_directory(self, tmdb_directory_path):
         # https: // kodi.wiki / view / Naming_video_files / TV_shows
         name, identifier, season = re.match(r'(.+)\.([sS]([0-9]{2})[eE][0-9]{2}).*', self.directory_name).groups()
         name = name.replace('.', ' ')
@@ -189,8 +211,8 @@ class TvShowEpisodeDirectory:
         season = int(season)
         identifier = identifier.upper()
         children = []
-        name_directory = f'{new_directory}/{name}'
-        season_directory = f'{new_directory}/{name}/Season {season}'
+        name_directory = f'{tmdb_directory_path}/{name}'
+        season_directory = f'{tmdb_directory_path}/{name}/Season {season}'
         for child in self.children:
             if identifier.lower() in child.filename.lower():
                 _, ext = os.path.splitext(child.filename)
@@ -205,21 +227,15 @@ class TvShowEpisodeDirectory:
         )
 
     @staticmethod
-    def is_valid(name):
-        if not bool(re.search('[sS][0-9]{2}[eE][0-9]{2}', name)):
+    def is_valid(directory):
+        if not bool(re.search('[sS][0-9]{2}[eE][0-9]{2}', directory)):
             return False
 
         return True
 
 
-class TvShowSeasonDirectory:
-    def __init__(self, parent_directory, directory_name, children):
-        self.parent_directory = parent_directory
-        self.directory_name = directory_name
-        self.children = children
-        self.directory = f'{self.parent_directory}/{self.directory_name}'
-
-    def get_tmdb_season(self, new_directory):
+class TvShowSeasonDirectory(AbstractDirectory):
+    def get_tmdb_directory(self, tmdb_directory_path):
         # https: // kodi.wiki / view / Naming_video_files / TV_shows
         # This almost duplicates TV Show Episode
         name, season = re.match(r'(.+)\.[sS]([0-9]{2}).*', self.directory_name).groups()
@@ -227,8 +243,8 @@ class TvShowSeasonDirectory:
         name = EdgeCaseNameHandler.get_name(name)
         season = int(season)
         children = []
-        name_directory = f'{new_directory}/{name}'
-        season_directory = f'{new_directory}/{name}/Season {season}'
+        name_directory = f'{tmdb_directory_path}/{name}'
+        season_directory = f'{tmdb_directory_path}/{name}/Season {season}'
         for child in self.children:
             match = re.match(r'.*([sS][0-9]{2}[eE][0-9]{2}).*', child.filename)
             if match is None:
@@ -245,23 +261,22 @@ class TvShowSeasonDirectory:
         )
 
     @staticmethod
-    def is_valid(name):
-        if TvShowEpisodeDirectory.is_valid(name):
+    def is_valid(directory):
+        if TvShowEpisodeDirectory.is_valid(directory):
             return False
 
-        if not bool(re.search('[sS][0-9]{2}', name)):
+        if not bool(re.search('[sS][0-9]{2}', directory)):
             return False
 
         return True
 
 
-class TvShowSeasonScanner(Scanner):
-    def scan(self):
-        """Returns a list of TV Show episodes in a directory"""
-        all_directories = os.listdir(self.path)
-        directories = list(filter(lambda d: TvShowSeasonDirectory.is_valid(f'{self.path}/{d}'), all_directories))
-        scanned = [self._scan_season(s) for s in directories]
-        return scanned
+class TvShowSeasonScanner(AbstractScanner):
+    def _filter_directories(self, directories):
+        return list(filter(lambda d: TvShowSeasonDirectory.is_valid(f'{self.path}/{d}'), directories))
+
+    def _map_directories(self, directories):
+        return [self._scan_season(s) for s in directories]
 
     def _scan_season(self, season):
         parent = f'{self.path}/{season}'
@@ -278,29 +293,28 @@ class TvShowSeasonLinker(AbstractLinker):
     def __init__(self, new_path, scanner):
         super().__init__(new_path, scanner)
 
-    def _link_item(self, season):
-        tmdb_season = season.get_tmdb_season(self.new_path)
-        if not os.path.exists(tmdb_season.name_directory):
-            os.makedirs(tmdb_season.name_directory)
-            self.logging.debug(f'Created directory {tmdb_season.name_directory}.')
+    def _link_directory(self, directory):
+        tmdb_directory = directory.get_tmdb_directory(self.new_path)
+        if not os.path.exists(tmdb_directory.name_directory):
+            os.makedirs(tmdb_directory.name_directory)
+            self.logging.debug(f'Created directory {tmdb_directory.name_directory}.')
 
-        if not os.path.exists(tmdb_season.season_directory):
-            os.makedirs(tmdb_season.season_directory)
-            self.logging.debug(f'Created directory {tmdb_season.season_directory}.')
+        if not os.path.exists(tmdb_directory.season_directory):
+            os.makedirs(tmdb_directory.season_directory)
+            self.logging.debug(f'Created directory {tmdb_directory.season_directory}.')
 
-        for i, _ in enumerate(season.children):
-            os.symlink(season.children[i].get_path(), tmdb_season.children[i].get_path())
+        for i, _ in enumerate(directory.children):
+            os.symlink(directory.children[i].get_path(), tmdb_directory.children[i].get_path())
             self.logging.debug(
-                f'Linked src={season.children[i].get_path()} to dest={tmdb_season.children[i].get_path()}')
+                f'Linked src={directory.children[i].get_path()} to dest={tmdb_directory.children[i].get_path()}')
 
 
-class TvShowEpisodeScanner(Scanner):
-    def scan(self):
-        """Returns a list of TvShowEpisodeDirectory"""
-        all_directories = os.listdir(self.path)
-        directories = list(filter(lambda d: TvShowEpisodeDirectory.is_valid(f'{self.path}/{d}'), all_directories))
-        scanned = [self._scan_episode(e) for e in directories]
-        return scanned
+class TvShowEpisodeScanner(AbstractScanner):
+    def _filter_directories(self, directories):
+        return list(filter(lambda d: TvShowEpisodeDirectory.is_valid(f'{self.path}/{d}'), directories))
+
+    def _map_directories(self, directories):
+        return [self._scan_episode(e) for e in directories]
 
     def _scan_episode(self, episode):
         parent = f'{self.path}/{episode}'
@@ -317,8 +331,8 @@ class TvShowEpisodeLinker(AbstractLinker):
     def __init__(self, new_path, scanner):
         super().__init__(new_path, scanner)
 
-    def _link_item(self, episode):
-        tmdb_episode = episode.get_tmdb_episode(self.new_path)
+    def _link_directory(self, directory):
+        tmdb_episode = directory.get_tmdb_directory(self.new_path)
 
         if not os.path.exists(tmdb_episode.name_directory):
             os.makedirs(tmdb_episode.name_directory)
@@ -328,10 +342,10 @@ class TvShowEpisodeLinker(AbstractLinker):
             os.makedirs(tmdb_episode.season_directory)
             self.logging.debug(f'Created directory {tmdb_episode.season_directory}.')
 
-        for i, _ in enumerate(episode.children):
-            os.symlink(episode.children[i].get_path(), tmdb_episode.children[i].get_path())
+        for i, _ in enumerate(directory.children):
+            os.symlink(directory.children[i].get_path(), tmdb_episode.children[i].get_path())
             self.logging.debug(
-                f'Linked src={episode.children[i].get_path()} to dest={tmdb_episode.children[i].get_path()}')
+                f'Linked src={directory.children[i].get_path()} to dest={tmdb_episode.children[i].get_path()}')
 
 
 class Linker:
@@ -360,12 +374,14 @@ def main():
     parser.add_argument(
         '--movies-path',
         required=True,
-        help="Absolute path to directory where you will store symbolic links. This directory is the source directory of video source in LibreELEC."
+        help=("Absolute path to directory where you will store symbolic links. "
+              "This directory is the source directory of video source in LibreELEC.")
     )
     parser.add_argument(
         '--tv-shows-path',
         required=True,
-        help="Absolute path to directory where you will store symbolic links. This directory is the source directory of video source in LibreELEC."
+        help=("Absolute path to directory where you will store symbolic links. "
+              "This directory is the source directory of video source in LibreELEC.")
     )
     parser.add_argument(
         '--log-level',
