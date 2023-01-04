@@ -27,6 +27,18 @@ class Utils:
         Utils.logging.debug(f"Created {directory}.")
 
 
+class EdgeCaseNameHandler:
+    edge_cases = {
+        'The Glory': 'The Glory (2022)'
+    }
+
+    @staticmethod
+    def get_name(name):
+        """Returns <name> if name is not an edge case name, else it returns corrected name."""
+        if name in EdgeCaseNameHandler.edge_cases:
+            return EdgeCaseNameHandler.edge_cases[name]
+        return name
+
 class File:
     def __init__(self, filename, parent):
         self.filename = filename
@@ -171,6 +183,7 @@ class TvShowEpisodeDirectory:
     def get_tmdb_episode(self, new_directory):
         name, identifier, season = re.match(r'(.+)\.([sS]([0-9]{2})[eE][0-9]{2}).*', self.directory_name).groups()
         name = name.replace('.', ' ')
+        name = EdgeCaseNameHandler.get_name(name)
         season = int(season)
         identifier = identifier.upper()
         children = []
@@ -203,16 +216,12 @@ class TvShowSeasonDirectory:
         self.directory_name = directory_name
         self.children = children
         self.directory = f'{self.parent_directory}/{self.directory_name}'
-        self.name_edge_cases = {
-            'The Glory': 'The Glory (2022)'
-        }
 
     def get_tmdb_season(self, new_directory):
         # This almost duplicates TV Show Episode
         name, season = re.match(r'(.+)\.[sS]([0-9]{2}).*', self.directory_name).groups()
         name = name.replace('.', ' ')
-        if name in self.name_edge_cases:
-            name = self.name_edge_cases[name]
+        name = EdgeCaseNameHandler.get_name(name)
         season = int(season)
         children = []
         name_directory = f'{new_directory}/{name}'
