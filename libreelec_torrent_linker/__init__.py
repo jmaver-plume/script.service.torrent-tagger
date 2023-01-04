@@ -82,6 +82,7 @@ class MovieDirectory:
         self.directory = f'{self.parent_directory}/{self.directory_name}'
 
     def get_tmdb_movie(self, new_directory):
+        # https: // kodi.wiki / view / Naming_video_files / movies
         def _get_tmdb_name():
             split_on_quality = re.split(r'(2160p|1080p|720p)', self.directory_name)
             name = split_on_quality[0].replace('.', ' ').strip()
@@ -181,6 +182,7 @@ class TvShowEpisodeDirectory:
         self.directory = f'{self.parent_directory}/{self.directory_name}'
 
     def get_tmdb_episode(self, new_directory):
+        # https: // kodi.wiki / view / Naming_video_files / TV_shows
         name, identifier, season = re.match(r'(.+)\.([sS]([0-9]{2})[eE][0-9]{2}).*', self.directory_name).groups()
         name = name.replace('.', ' ')
         name = EdgeCaseNameHandler.get_name(name)
@@ -218,6 +220,7 @@ class TvShowSeasonDirectory:
         self.directory = f'{self.parent_directory}/{self.directory_name}'
 
     def get_tmdb_season(self, new_directory):
+        # https: // kodi.wiki / view / Naming_video_files / TV_shows
         # This almost duplicates TV Show Episode
         name, season = re.match(r'(.+)\.[sS]([0-9]{2}).*', self.directory_name).groups()
         name = name.replace('.', ' ')
