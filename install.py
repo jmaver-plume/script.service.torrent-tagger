@@ -44,7 +44,7 @@ def main():
     )
     parser.add_argument(
         '--cron-expression',
-        default="*/1 * * * *",
+        default="*/30 * * * *",
     )
     args = parser.parse_args()
     setup_cron(args)
