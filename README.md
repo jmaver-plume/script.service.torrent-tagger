@@ -1,25 +1,28 @@
-# LibreELEC Torrent "renamer"
+# LibreELEC scripts
 
-## What does it do
+A list of scripts that I use on LibreELEC.
 
-Movies or a tv shows downloaded from a torrent site (e.g., RARBG) are named in such a way that scraping does not work.  
+## LibreELEC Torrent "linker"
+
+### What does it do
+
+Movies or tv shows downloaded from a torrent site (e.g., RARBG) are named in such a way that scraping does not work.  
 This script creates new directories and symbol links to files with proper naming, such that scraping software can work correctly.
 
 The packaged is designed to properly parse and link torrents from RARBG.
 
-## Running tests
+### Running tests
 
 ```shell
 python3 -m unittest discover -s .
 ```
 
 
-## Install
+### Install
 
 TODO
 
-## Usage
-TODO
+### Usage
 
 Execute the script in the following way:
 ```shell
@@ -65,8 +68,9 @@ it will create the following directories and files.
 
 You can then create separate movie and tv show video sources in Kodi.
 
-## TODO
+### TODO
 
-- [ ] Write "how to enable automatic scraping on start LibreELEC"
-- [ ] Add section "how to clean up library after deleting a file"
+- [ ] Add installation guide (GitHub package + installation script)
+- [ ] Add cron job to linker
+- [ ] Improve linker to update / refresh library on any change.
 - [ ] Add linter
