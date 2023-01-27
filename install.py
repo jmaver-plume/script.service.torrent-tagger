@@ -1,7 +1,24 @@
+#!/usr/bin/python
+
 import argparse
+import logging
+import os
 
 
-def argument_parser():
+def setup_cron(args):
+    log = logging.getLogger('CronSetup')
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script = os.path.join(script_dir, 'libreelec_torrent_linker/linker.py')
+    arguments = f"--action='RunScript({script}, --downloads-path, {args.downloads_path}, --movies-path, {args.movies_path}, --tv-shows-path, {args.tv_shows_path}, --log-level, {args.log_level})'"
+    function = '/usr/bin/kodi-send'
+    expression = f'{args.cron_expression} {function} {arguments}'
+    cron_dir = '/storage/.cache/cron/crontabs/root'
+    with open(cron_dir, 'w') as f:
+        f.write(expression)
+    log.debug(f'Wrote "{expression}" to "{cron_dir}"')
+
+
+def main():
     parser = argparse.ArgumentParser(description='Creates symbolic links with proper naming for LibreELEC scraper.')
     parser.add_argument(
         '--downloads-path',
@@ -25,4 +42,13 @@ def argument_parser():
         default="INFO",
         choices=["ERROR", "DEBUG", "INFO"]
     )
-    return parser
+    parser.add_argument(
+        '--cron-expression',
+        default="*/1 * * * *",
+    )
+    args = parser.parse_args()
+    setup_cron(args)
+
+
+if __name__ == "__main__":
+    main()

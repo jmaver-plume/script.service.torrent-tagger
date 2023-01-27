@@ -1,17 +1,29 @@
-# LibreELEC scripts
+# LibreELEC Torrent "linker"
 
-A list of scripts that I use on LibreELEC.
+The movies and tv shows downloaded from a torrent site (e.g., RARBG) are named so that scraping does not work.
+*LibreELEC Torrent "linker"* is a python script and a cronjob that creates new directories and symbolic links to files with proper naming so scraping software can work correctly.
 
-## LibreELEC Torrent "linker"
 
-### What does it do
+## Installation
 
-Movies or tv shows downloaded from a torrent site (e.g., RARBG) are named in such a way that scraping does not work.  
-This script creates new directories and symbol links to files with proper naming, such that scraping software can work correctly.
+```shell
+# Get the latest release from https://github.com/jmaver-plume/libreelec-torrent-linker/releases/latest
+wget https://github.com/jmaver-plume/libreelec-torrent-linker/archive/refs/tags/{version}.zip
+unzip {version}.zip
+cd libreelec-torrent-linker-1.0.0
 
-The packaged is designed to properly parse and link torrents from RARBG.
+# Help
+./install.py -h 
 
-### Running tests
+# Example
+./install.py --downloads-path /path/to/downloads --tv-shows-path /path/to/tv --movies-path /path/to/movies
+```
+
+### Video Sources
+
+You need to either update existing TV Show or Video sources to read from The Movie Database or create new ones. 
+
+## Running tests
 
 ```shell
 python3 -m unittest discover -s .
@@ -66,11 +78,6 @@ it will create the following directories and files.
 |           |-- Counterpart S01E03.mkv
 ```
 
-You can then create separate movie and tv show video sources in Kodi.
-
 ### TODO
 
-- [ ] Add installation guide (GitHub package + installation script)
-- [ ] Add cron job to linker
-- [ ] Improve linker to update / refresh library on any change.
 - [ ] Add linter
