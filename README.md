@@ -26,9 +26,9 @@ TODO
 
 Execute the script in the following way:
 ```shell
-libreelec-torrent-linker -h
+libreelec_torrent_linker -h
 
-libreelec-torrent-linker --downloads-path "/path/to/downloads/complete" \
+libreelec_torrent_linker --downloads-path "/path/to/downloads/complete" \
 --movies-path "/path/to/movies" \
 --tv-shows-path "/path/to/tv_shows"  
 ```
