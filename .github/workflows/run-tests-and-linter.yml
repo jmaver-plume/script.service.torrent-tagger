@@ -1,4 +1,4 @@
-name: run-tests-pull-request-main
+name: run-tests-and-linter
 run-name: Run tests and linter
 on:
   pull_request:
