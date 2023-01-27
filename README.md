@@ -1,6 +1,7 @@
 # LibreELEC Torrent "linker"
 
-https://github.com/jmaver-plume/libreelec-torrent-linker/actions/workflows/tests-and-linter.yml/badge.svg?branch=main
+![run-tests-and-linter](https://github.com/jmaver-plume/libreelec-torrent-linker/actions/workflows/run-tests-and-linter.yml/badge.svg?branch=main)
+
 
 The movies and tv shows downloaded from a torrent site (e.g., RARBG) are named so that scraping does not work.
 *LibreELEC Torrent "linker"* is a python script and a cronjob that creates new directories and symbolic links to files with proper naming so scraping software can work correctly.
