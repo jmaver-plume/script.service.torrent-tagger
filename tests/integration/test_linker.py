@@ -2,7 +2,7 @@ import pathlib
 import unittest
 import os
 
-import libreelec_torrent_linker
+import libreelec_torrent_linker.linker
 
 
 class TestLinker(unittest.TestCase):
@@ -11,10 +11,15 @@ class TestLinker(unittest.TestCase):
         movies_path = os.path.abspath('/tmp/directories/movies')
         tv_shows_path = os.path.abspath('/tmp/directories/tv_shows')
 
-        linker = libreelec_torrent_linker.Linker(
+        class MockXbmc:
+            def executebuiltin(self):
+                pass
+
+        linker = libreelec_torrent_linker.linker.Linker(
             downloads_path=downloads_path,
             movies_path=movies_path,
-            tv_shows_path=tv_shows_path
+            tv_shows_path=tv_shows_path,
+            xbmc=MockXbmc
         )
         linker.link()
 
