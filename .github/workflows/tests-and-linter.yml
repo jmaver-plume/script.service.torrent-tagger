@@ -1,7 +1,9 @@
 name: run-tests-pull-request-main
-run-name: Run tests on pull request when target is main
+run-name: Run tests and linter
 on:
   pull_request:
+    branches: [main]
+  push:
     branches: [main]
 jobs:
   run-tests:
