@@ -20,11 +20,7 @@ python3 -m unittest discover -s .
 
 ### Install
 
-The package can be installed as a pip package.
-
-```shell
-pip install git+https://github.com/jmaver-plume/libreelec-torrent-linker.git
-```
+TODO
 
 ### Usage
 
