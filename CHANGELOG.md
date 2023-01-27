@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/jmaver-plume/libreelec-torrent-linker/compare/v1.0.0...v1.1.0) (2023-01-27)
+
+
+### Features
+
+* Add cron and Kodi library cleanup ([#6](https://github.com/jmaver-plume/libreelec-torrent-linker/issues/6)) ([797260d](https://github.com/jmaver-plume/libreelec-torrent-linker/commit/797260d5577ce4e4121a1ebfa98e8787cc724232))
+
 ## 1.0.0 (2023-01-27)
 
 
