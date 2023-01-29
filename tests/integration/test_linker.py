@@ -25,7 +25,7 @@ class TestLinker(unittest.TestCase):
     def setUp(self):
         downloads_path = os.path.abspath(f'{pathlib.Path(__file__).parent.resolve()}/torrent_downloads')
         self.downloads_path = os.path.abspath('/tmp/directories/downloads')
-        self.downloads_state_path = os.path.abspath(f'/tmp/libreelec-torrent-linker')
+        self.downloads_state_path = os.path.abspath('/tmp/libreelec-torrent-linker')
         self.movies_path = os.path.abspath('/tmp/directories/movies')
         self.tv_shows_path = os.path.abspath('/tmp/directories/tv_shows')
 
