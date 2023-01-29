@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/jmaver-plume/libreelec-torrent-linker/compare/v1.1.0...v1.2.0) (2023-01-29)
+
+
+### Features
+
+* Prevent update if player is playing or no changes ([ede82a3](https://github.com/jmaver-plume/libreelec-torrent-linker/commit/ede82a33c4c8f47f0ed92d69c80f1dd26250a5a6))
+
 ## [1.1.0](https://github.com/jmaver-plume/libreelec-torrent-linker/compare/v1.0.0...v1.1.0) (2023-01-27)
 
 
