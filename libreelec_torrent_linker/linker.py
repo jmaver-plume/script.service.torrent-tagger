@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import importlib
 import logging
 import os
@@ -10,6 +11,14 @@ from abc import ABC, abstractmethod
 # Utils
 class Utils:
     logging = logging.getLogger("Utils")
+
+    @staticmethod
+    def safe_delete_directory(directory):
+        if not os.path.exists(directory):
+            return
+
+        shutil.rmtree(directory)
+        Utils.logging.debug(f"Deleted {directory}.")
 
     @staticmethod
     def init_directories(*directories):
@@ -43,24 +52,38 @@ class Utils:
         return set(sorted(descendants))
 
 
-# import os
-#
+class DownloadsDirectory:
+    def __init__(self, downloads_path, state_path):
+        self.downloads_path = downloads_path
+        self.state_path = state_path
 
-#
-#
-# def get_hash(descendants):
-#   return hashlib.md5(descendants.encode()).hexdigest()
-#
-#
-# def main():
-#   descendants = get_all_descendants('/storage/foo')
-#   print(descendants)
-#   key = get_hash(descendants)
-#   print(key)
-#
-#
-# if __name__ == "__main__":
-#   main()
+    def contains_changes(self):
+        saved_state = self.get_saved_state()
+        current_state = self.get_current_state()
+        return current_state != saved_state
+
+    def update_state(self):
+        current_state = self.get_current_state()
+        with open(self.state_path, 'w') as f:
+            f.write(current_state)
+
+    def get_saved_state(self):
+        if not os.path.exists(self.state_path):
+            return None
+
+        with open(self.state_path, 'r') as f:
+            return f.read()
+
+    def get_current_state(self):
+        descendants = self._get_all_descendants()
+        return hashlib.md5(descendants.encode()).hexdigest()
+
+    def _get_all_descendants(self):
+        descendants = []
+        for root, dirs, files in os.walk(self.downloads_path):
+            for descendant in sorted(files + dirs):
+                descendants.append(os.path.join(root, descendant))
+        return '::'.join(descendants)
 
 
 class EdgeCaseNameHandler:
@@ -353,16 +376,27 @@ class TvShowLinker(AbstractLinker):
 
 
 class Linker:
-    def __init__(self, movies_path, tv_shows_path, downloads_path, xbmc):
+    def __init__(self, movies_path, tv_shows_path, downloads_path, downloads_state_path, xbmc):
         self.movies_path = movies_path
         self.tv_shows_path = tv_shows_path
+        self.downloads_path = downloads_path
         self.movie_linker = MovieLinker(movies_path, MovieScanner(downloads_path))
         self.episode_linker = TvShowLinker(tv_shows_path, TvShowEpisodeScanner(downloads_path))
         self.season_linker = TvShowLinker(tv_shows_path, TvShowSeasonScanner(downloads_path))
+        self.downloads_directory = DownloadsDirectory(self.downloads_path, downloads_state_path)
         self.logging = logging.getLogger(self.__class__.__name__)
         self.xbmc = xbmc
 
     def link(self):
+        player = self.xbmc.Player()
+        if player.isPlaying():
+            self.logging.debug('Kodi is playing. Skipping linker ...')
+            return
+
+        if not self.downloads_directory.contains_changes():
+            self.logging.debug('No changes detected in the downloads directory.')
+            return
+
         prev_movies_descendants = Utils.get_all_descendants(self.movies_path)
         prev_tv_shows_descendants = Utils.get_all_descendants(self.tv_shows_path)
 
@@ -390,6 +424,9 @@ class Linker:
             self.logging.info(f'new_tv_shows_descendants={new_tv_shows_descendants}')
             self.xbmc.executebuiltin('UpdateLibrary(video)')
 
+        self.downloads_directory.update_state()
+        self.logging.debug('Updated state')
+
 
 # Main
 def main():
@@ -398,6 +435,12 @@ def main():
         '--downloads-path',
         required=True,
         help="Absolute path to directory where you have downloaded torrents."
+    )
+    parser.add_argument(
+        '--downloads-state-path',
+        required=True,
+        help=("Absolute path to the file where "
+              "state of the --downloads-path will be stored.")
     )
     parser.add_argument(
         '--movies-path',
@@ -424,6 +467,7 @@ def main():
         tv_shows_path=args.tv_shows_path,
         downloads_path=args.downloads_path,
         movies_path=args.movies_path,
+        downloads_state_path=args.state_path,
         xbmc=xbmc
     )
     linker.link()
