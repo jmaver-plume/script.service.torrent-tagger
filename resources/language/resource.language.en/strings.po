@@ -1,0 +1,19 @@
+msgctxt "#30001"
+msgid "General"
+msgstr ""
+
+msgctxt "#30010"
+msgid "TV Shows path"
+msgstr ""
+
+msgctxt "#30011"
+msgid "Movies path"
+msgstr ""
+
+msgctxt "#30012"
+msgid "Downloads path"
+msgstr ""
+
+msgctxt "#30013"
+msgid "Downloads state path"
+msgstr ""

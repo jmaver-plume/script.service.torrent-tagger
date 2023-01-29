@@ -1,17 +1,13 @@
 import time
 import xbmc
+import xbmcaddon
 
 from resources.lib.linker import Linker, MovieLinker, MovieScanner, TvShowLinker, TvShowEpisodeScanner, \
     DownloadsDirectory, Utils, TvShowSeasonScanner
 
-# TODO: Move to settings.xml
-tv_shows_path = '/storage/tvshows'
-downloads_path = '/storage/transmission/downloads/complete'
-movies_path = '/storage/movies'
-downloads_state_path = '/storage/.cache/.torrent-tagger'
-
 
 def main():
+    addon = xbmcaddon.Addon()
     monitor = xbmc.Monitor()
 
     i = 0
@@ -23,6 +19,12 @@ def main():
             i = 0
             xbmc.log(f"[{time.time()}]:  Running linker!", level=xbmc.LOGINFO)
             utils = Utils(xbmc)
+
+            tv_shows_path = addon.getSetting('tv_shows_path')
+            movies_path = addon.getSetting('movies_path')
+            downloads_path = addon.getSetting('downloads_path')
+            downloads_state_path = addon.getSetting('downloads_state_path')
+
             movie_scanner = MovieScanner(downloads_path, xbmc)
             tv_show_episode_scanner = TvShowEpisodeScanner(downloads_path, xbmc)
             tv_show_season_scanner = TvShowSeasonScanner(downloads_path, xbmc)
