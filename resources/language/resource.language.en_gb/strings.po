@@ -1,0 +1,41 @@
+# Torrent Tagger language file
+# Addon Name: Torrent Tagger
+# Addon id: script.service.torrent-tagger
+# Addon Provider: jm18457
+msgid ""
+msgstr ""
+"Project-Id-Version: Torrent Tagger\n"
+"Report-Msgid-Bugs-To: jm18457@gmail.com\n"
+"POT-Creation-Date: 2023-01-29 17:00+1\n"
+"PO-Revision-Date: 2023-01-29 17:00+1\n"
+"Last-Translator: jm18457@gmail.com\n"
+"Language-Team: English\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgctxt "#32001"
+msgid "General"
+msgstr ""
+
+msgctxt "#32002"
+msgid "TV Shows path"
+msgstr ""
+
+msgctxt "#32003"
+msgid "Movies path"
+msgstr ""
+
+msgctxt "#32004"
+msgid "Downloads path"
+msgstr ""
+
+msgctxt "#32005"
+msgid "Downloads state path"
+msgstr ""
+
+msgctxt "#32006"
+msgid "Scan interval in seconds"
+msgstr ""
