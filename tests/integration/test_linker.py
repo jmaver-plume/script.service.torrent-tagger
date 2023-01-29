@@ -3,7 +3,7 @@ import unittest
 import os
 from distutils.dir_util import copy_tree
 
-import libreelec_torrent_linker.linker
+import resources.lib.linker
 
 
 class TestLinker(unittest.TestCase):
@@ -16,8 +16,8 @@ class TestLinker(unittest.TestCase):
         self.movies_path = os.path.abspath('/tmp/directories/movies')
         self.tv_shows_path = os.path.abspath('/tmp/directories/tv_shows')
 
-        libreelec_torrent_linker.linker.Utils.safe_delete_directory(self.tv_shows_path)
-        libreelec_torrent_linker.linker.Utils.safe_delete_directory(self.movies_path)
+        resources.lib.linker.Utils.safe_delete_directory(self.tv_shows_path)
+        resources.lib.linker.Utils.safe_delete_directory(self.movies_path)
 
         if os.path.exists(self.downloads_state_path):
             os.remove(self.downloads_state_path)
@@ -37,7 +37,7 @@ class TestLinker(unittest.TestCase):
                 return MockPlayer()
 
 
-        linker = libreelec_torrent_linker.linker.Linker(
+        linker = resources.lib.linker.Linker(
             downloads_path=self.downloads_path,
             downloads_state_path=self.downloads_state_path,
             movies_path=self.movies_path,
@@ -103,7 +103,7 @@ class TestLinker(unittest.TestCase):
             def Player():
                 return MockPlayer()
 
-        linker = libreelec_torrent_linker.linker.Linker(
+        linker = resources.lib.linker.Linker(
             downloads_path=self.downloads_path,
             downloads_state_path=self.downloads_state_path,
             movies_path=self.movies_path,
@@ -129,7 +129,7 @@ class TestLinker(unittest.TestCase):
             def Player():
                 return MockPlayer()
 
-        linker = libreelec_torrent_linker.linker.Linker(
+        linker = resources.lib.linker.Linker(
             downloads_path=self.downloads_path,
             downloads_state_path=self.downloads_state_path,
             movies_path=self.movies_path,

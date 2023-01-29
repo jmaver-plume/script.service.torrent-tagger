@@ -1,6 +1,4 @@
-import argparse
 import hashlib
-import importlib
 import logging
 import os
 import re
@@ -427,51 +425,3 @@ class Linker:
         self.downloads_directory.update_state()
         self.logging.debug('Updated state')
 
-
-# Main
-def main():
-    parser = argparse.ArgumentParser(description='Creates symbolic links with proper naming for LibreELEC scraper.')
-    parser.add_argument(
-        '--downloads-path',
-        required=True,
-        help="Absolute path to directory where you have downloaded torrents."
-    )
-    parser.add_argument(
-        '--downloads-state-path',
-        required=True,
-        help=("Absolute path to the file where "
-              "state of the --downloads-path will be stored.")
-    )
-    parser.add_argument(
-        '--movies-path',
-        required=True,
-        help=("Absolute path to directory where you will store symbolic links. "
-              "This directory is the source directory of video source in LibreELEC.")
-    )
-    parser.add_argument(
-        '--tv-shows-path',
-        required=True,
-        help=("Absolute path to directory where you will store symbolic links. "
-              "This directory is the source directory of video source in LibreELEC.")
-    )
-    parser.add_argument(
-        '--log-level',
-        default="INFO",
-        choices=["ERROR", "DEBUG", "INFO"]
-    )
-    args = parser.parse_args()
-    logging.basicConfig(level=logging.getLevelName(args.log_level))
-
-    xbmc = importlib.import_module('xbmc')
-    linker = Linker(
-        tv_shows_path=args.tv_shows_path,
-        downloads_path=args.downloads_path,
-        movies_path=args.movies_path,
-        downloads_state_path=args.state_path,
-        xbmc=xbmc
-    )
-    linker.link()
-
-
-if __name__ == "__main__":
-    main()
