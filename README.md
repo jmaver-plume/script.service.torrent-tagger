@@ -1,52 +1,25 @@
-# LibreELEC Torrent "linker"
+# script.service.torrent-tagger
 
 ![run-tests-and-linter](https://github.com/jmaver-plume/libreelec-torrent-linker/actions/workflows/run-tests-and-linter.yml/badge.svg?branch=main)
 
 
-The movies and tv shows downloaded from a torrent site (e.g., RARBG) are named so that scraping does not work.
-*LibreELEC Torrent "linker"* is a python script and a cronjob that creates new directories and symbolic links to files with proper naming so scraping software can work correctly.
+The movies and tv shows downloaded from a torrent site (e.g., RARBG) are named inappropriately, which causes issues with scraping.
+
+**script.service.torrent-tagger** is a Kodi service add-on that checks, on a configurable interval, the current downloads folder for any movie and tv show files and syncs them with dummy directories containing only symbolic links with proper naming for scraping to work.
 
 
 ## Installation
 
-```shell
-# Get the latest release from https://github.com/jmaver-plume/libreelec-torrent-linker/releases/latest
-wget https://github.com/jmaver-plume/libreelec-torrent-linker/archive/refs/tags/{version}.zip
-unzip {version}.zip
-cd libreelec-torrent-linker-1.0.0
+1. Download the [latest release](https://github.com/jmaver-plume/libreelec-torrent-linker/releases/latest) to your LibreELEC.
+2. Install the add-on from the downloaded zip file.
 
-# Help
-./install.py -h 
-
-# Example
-./install.py --downloads-path /path/to/downloads --tv-shows-path /path/to/tv --movies-path /path/to/movies
-```
 
 ### Video Sources
 
-You need to either update existing TV Show or Video sources to read from The Movie Database or create new ones. 
-
-## Running tests
-
-```shell
-python3 -m unittest discover -s .
-```
+You need to either update existing TV Shows or Video sources to read from The Movie Database or create new ones.
 
 
-### Install
-
-TODO
-
-### Usage
-
-Execute the script in the following way:
-```shell
-libreelec_torrent_linker -h
-
-libreelec_torrent_linker --downloads-path "/path/to/downloads/complete" \
---movies-path "/path/to/movies" \
---tv-shows-path "/path/to/tv_shows"  
-```
+## Example
 
 If you have the following Downloads directory structure
 
@@ -80,7 +53,3 @@ it will create the following directories and files.
 |           |-- Counterpart S01E02.mkv
 |           |-- Counterpart S01E03.mkv
 ```
-
-### TODO
-
-- [ ] Add linter
