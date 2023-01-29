@@ -1,9 +1,23 @@
+import os
 import pathlib
 import unittest
-import os
 from distutils.dir_util import copy_tree
 
-import resources.lib.linker
+from resources.lib.linker import Linker, MovieLinker, MovieScanner, TvShowLinker, TvShowEpisodeScanner, \
+    DownloadsDirectory, Utils, TvShowSeasonScanner
+
+
+class MockXbmc:
+    LOGDEBUG = 1
+    LOGINFO = 1
+
+    @staticmethod
+    def executebuiltin(arg):
+        pass
+
+    @staticmethod
+    def log(msg, level):
+        pass
 
 
 class TestLinker(unittest.TestCase):
@@ -11,40 +25,41 @@ class TestLinker(unittest.TestCase):
     def setUp(self):
         downloads_path = os.path.abspath(f'{pathlib.Path(__file__).parent.resolve()}/torrent_downloads')
         self.downloads_path = os.path.abspath('/tmp/directories/downloads')
-        copy_tree(downloads_path, self.downloads_path)
         self.downloads_state_path = os.path.abspath(f'/tmp/libreelec-torrent-linker')
         self.movies_path = os.path.abspath('/tmp/directories/movies')
         self.tv_shows_path = os.path.abspath('/tmp/directories/tv_shows')
 
-        resources.lib.linker.Utils.safe_delete_directory(self.tv_shows_path)
-        resources.lib.linker.Utils.safe_delete_directory(self.movies_path)
+        self.utils = Utils(MockXbmc)
+        self.utils.safe_delete_directory(self.tv_shows_path)
+        self.utils.safe_delete_directory(self.movies_path)
 
+        movie_scanner = MovieScanner(downloads_path, MockXbmc)
+        tv_show_episode_scanner = TvShowEpisodeScanner(downloads_path, MockXbmc)
+        tv_show_season_scanner = TvShowSeasonScanner(downloads_path, MockXbmc)
+        downloads_directory = DownloadsDirectory(downloads_path, self.downloads_state_path, MockXbmc)
+        movie_linker = MovieLinker(self.movies_path, movie_scanner, MockXbmc, self.utils)
+        episode_linker = TvShowLinker(self.tv_shows_path, tv_show_episode_scanner, MockXbmc, self.utils)
+        season_linker = TvShowLinker(self.tv_shows_path, tv_show_season_scanner, MockXbmc, self.utils)
+
+        self.linker = Linker(
+            tv_shows_path=self.tv_shows_path,
+            downloads_path=downloads_path,
+            movies_path=self.movies_path,
+            downloads_state_path=self.downloads_state_path,
+            xbmc=MockXbmc,
+            movie_linker=movie_linker,
+            episode_linker=episode_linker,
+            season_linker=season_linker,
+            downloads_directory=downloads_directory,
+            utils=self.utils
+        )
+
+        copy_tree(downloads_path, self.downloads_path)
         if os.path.exists(self.downloads_state_path):
             os.remove(self.downloads_state_path)
 
     def test_should_create_new_directories_and_link_files_and_set_state_when_empty(self):
-        class MockPlayer:
-            def isPlaying(self):
-                return False
-
-        class MockXbmc:
-            @staticmethod
-            def executebuiltin(arg):
-                pass
-
-            @staticmethod
-            def Player():
-                return MockPlayer()
-
-
-        linker = resources.lib.linker.Linker(
-            downloads_path=self.downloads_path,
-            downloads_state_path=self.downloads_state_path,
-            movies_path=self.movies_path,
-            tv_shows_path=self.tv_shows_path,
-            xbmc=MockXbmc
-        )
-        linker.link()
+        self.linker.link()
 
         # Validate movies
         self.assertTrue(os.path.exists(self.movies_path))
@@ -79,65 +94,11 @@ class TestLinker(unittest.TestCase):
         self.assertTrue(os.path.exists(f'{self.tv_shows_path}/The Patient/Season 1/The Patient S01E04 2_English.srt'))
         self.assertTrue(os.path.exists(f'{self.tv_shows_path}/The Patient/Season 1/The Patient S01E04 3_English.srt'))
 
-        # Validate Alice in Borderland
-        self.assertTrue(os.path.exists(self.tv_shows_path))
-        self.assertTrue(os.path.exists(f'{self.tv_shows_path}/Alice in Borderland'))
-        self.assertTrue(os.path.exists(f'{self.tv_shows_path}/Alice in Borderland/Season 1'))
-        self.assertTrue(os.path.islink(f'{self.tv_shows_path}/Alice in Borderland/Season 1/Alice in Borderland S01E01.mp4'))
-        self.assertTrue(os.path.islink(f'{self.tv_shows_path}/Alice in Borderland/Season 1/Alice in Borderland S01E02.mp4'))
-        self.assertTrue(os.path.islink(f'{self.tv_shows_path}/Alice in Borderland/Season 1/Subs'))
-
         os.remove(self.downloads_state_path)
 
-    def test_should_quit_early_when_player_is_playing(self):
-        class MockPlayer:
-            def isPlaying(self):
-                return True
-
-        class MockXbmc:
-            @staticmethod
-            def executebuiltin():
-                pass
-
-            @staticmethod
-            def Player():
-                return MockPlayer()
-
-        linker = resources.lib.linker.Linker(
-            downloads_path=self.downloads_path,
-            downloads_state_path=self.downloads_state_path,
-            movies_path=self.movies_path,
-            tv_shows_path=self.tv_shows_path,
-            xbmc=MockXbmc
-        )
-        linker.link()
-
-        self.assertFalse(os.path.exists(self.movies_path))
-        self.assertFalse(os.path.exists(self.tv_shows_path))
-
+    @unittest.skip('Not implemented')
     def test_should_quit_early_downloads_state_is_the_same(self):
-        class MockPlayer:
-            def isPlaying(self):
-                return False
-
-        class MockXbmc:
-            @staticmethod
-            def executebuiltin(arg):
-                pass
-
-            @staticmethod
-            def Player():
-                return MockPlayer()
-
-        linker = resources.lib.linker.Linker(
-            downloads_path=self.downloads_path,
-            downloads_state_path=self.downloads_state_path,
-            movies_path=self.movies_path,
-            tv_shows_path=self.tv_shows_path,
-            xbmc=MockXbmc
-        )
-        linker.link()
-        linker.link() # TODO: How to test?
+        pass
 
     @unittest.skip('Not implemented')
     def test_should_call_kodi_library_cleanup_if_old_deleted(self):

@@ -1,5 +1,4 @@
 import hashlib
-import logging
 import os
 import re
 import shutil
@@ -8,41 +7,37 @@ from abc import ABC, abstractmethod
 
 # Utils
 class Utils:
-    logging = logging.getLogger("Utils")
+    def __init__(self, xbmc):
+        self.xbmc = xbmc
 
-    @staticmethod
-    def safe_delete_directory(directory):
+    def safe_delete_directory(self, directory):
         if not os.path.exists(directory):
             return
 
         shutil.rmtree(directory)
-        Utils.logging.debug(f"Deleted {directory}.")
+        self.xbmc.log(f"Deleted {directory}.", level=self.xbmc.LOGDEBUG)
 
-    @staticmethod
-    def init_directories(*directories):
+    def init_directories(self, *directories):
         for directory in directories:
-            Utils.init_directory(directory)
+            self.init_directory(directory)
 
-    @staticmethod
-    def init_directory(directory):
+    def init_directory(self, directory):
         if os.path.exists(directory):
             shutil.rmtree(directory)
-            Utils.logging.debug(f"Deleted {directory}.")
+            self.xbmc.log(f"Deleted {directory}.", level=self.xbmc.LOGDEBUG)
 
         while os.path.exists(directory):
             pass
 
         os.makedirs(directory)
-        Utils.logging.debug(f"Created {directory}.")
+        self.xbmc.log(f"Created {directory}.", level=self.xbmc.LOGDEBUG)
 
-    @staticmethod
-    def safe_makedirs(_dir):
+    def safe_makedirs(self, _dir):
         if not os.path.exists(_dir):
             os.makedirs(_dir)
-            Utils.logging.debug(f'Created directory {dir}.')
+            self.xbmc.log(f'Created directory {dir}.', level=self.xbmc.LOGDEBUG)
 
-    @staticmethod
-    def get_all_descendants(directory):
+    def get_all_descendants(self, directory):
         descendants = []
         for root, dirs, files in os.walk(directory):
             for descendant in sorted(files + dirs):
@@ -51,9 +46,10 @@ class Utils:
 
 
 class DownloadsDirectory:
-    def __init__(self, downloads_path, state_path):
+    def __init__(self, downloads_path, state_path, xbmc):
         self.downloads_path = downloads_path
         self.state_path = state_path
+        self.xbmc = xbmc
 
     def contains_changes(self):
         saved_state = self.get_saved_state()
@@ -254,9 +250,9 @@ class TvShowSeasonDirectory(AbstractDirectory):
 
 # Scanners
 class AbstractScanner(ABC):
-    def __init__(self, path):
+    def __init__(self, path, xbmc):
         self.path = path
-        self.logging = logging.getLogger(self.__class__.__name__)
+        self.xbmc = xbmc
 
     def scan(self):
         all_directories = os.listdir(self.path)
@@ -283,7 +279,7 @@ class MovieScanner(AbstractScanner):
     def _scan_movie_directory(self, movie_directory):
         parent = f'{self.path}/{movie_directory}'
         children = [File(f, parent) for f in os.listdir(parent)]
-        self.logging.debug(f"Found {movie_directory}.")
+        self.xbmc.log(f"Found {movie_directory}.", level=self.xbmc.LOGDEBUG)
         return MovieDirectory(
             parent_directory=self.path,
             directory_name=movie_directory,
@@ -301,7 +297,7 @@ class TvShowSeasonScanner(AbstractScanner):
     def _scan_season(self, season):
         parent = f'{self.path}/{season}'
         children = [File(f, parent) for f in os.listdir(parent)]
-        self.logging.debug(f"Found {season}.")
+        self.xbmc.log(f"Found {season}.", level=self.xbmc.LOGDEBUG)
         return TvShowSeasonDirectory(
             parent_directory=self.path,
             directory_name=season,
@@ -319,7 +315,7 @@ class TvShowEpisodeScanner(AbstractScanner):
     def _scan_episode(self, episode):
         parent = f'{self.path}/{episode}'
         children = [File(f, parent) for f in os.listdir(parent)]
-        self.logging.debug(f"Found {episode}.")
+        self.xbmc.log(f"Found {episode}.", level=self.xbmc.LOGDEBUG)
         return TvShowEpisodeDirectory(
             parent_directory=self.path,
             directory_name=episode,
@@ -329,11 +325,12 @@ class TvShowEpisodeScanner(AbstractScanner):
 
 # Linkers
 class AbstractLinker(ABC):
-    def __init__(self, new_path, scanner):
+    def __init__(self, new_path, scanner, xbmc, utils):
         super().__init__()
         self.new_path = new_path
         self.scanner = scanner
-        self.logging = logging.getLogger(self.__class__.__name__)
+        self.xbmc = xbmc
+        self.utils = utils
 
     def link(self):
         for directory in self.scanner.scan():
@@ -345,83 +342,92 @@ class AbstractLinker(ABC):
 
 
 class MovieLinker(AbstractLinker):
-    def __init__(self, new_path, scanner):
-        super().__init__(new_path, scanner)
+    def __init__(self, new_path, scanner, xbmc, utils):
+        super().__init__(new_path, scanner, xbmc, utils)
 
     def _link_directory(self, directory):
         tmdb_directory = directory.get_tmdb_directory(self.new_path)
-        Utils.safe_makedirs(tmdb_directory.directory)
+        self.utils.safe_makedirs(tmdb_directory.directory)
         for i, _ in enumerate(directory.children):
             os.symlink(directory.children[i].get_path(), tmdb_directory.children[i].get_path())
-            self.logging.debug(
+            self.xbmc.log(
                 'Linked src={0} to dest={1}.'
-                .format(directory.children[i].get_path(), tmdb_directory.children[i].get_path())
+                .format(directory.children[i].get_path(), tmdb_directory.children[i].get_path()),
+                level=self.xbmc.LOGDEBUG
             )
 
 
 class TvShowLinker(AbstractLinker):
-    def __init__(self, new_path, scanner):
-        super().__init__(new_path, scanner)
+    def __init__(self, new_path, scanner, xbmc, utils):
+        super().__init__(new_path, scanner, xbmc, utils)
 
     def _link_directory(self, directory):
         tmdb_directory = directory.get_tmdb_directory(self.new_path)
-        Utils.safe_makedirs(tmdb_directory.name_directory)
-        Utils.safe_makedirs(tmdb_directory.season_directory)
+        self.utils.safe_makedirs(tmdb_directory.name_directory)
+        self.utils.safe_makedirs(tmdb_directory.season_directory)
         for i, _ in enumerate(directory.children):
             os.symlink(directory.children[i].get_path(), tmdb_directory.children[i].get_path())
-            self.logging.debug(
-                f'Linked src={directory.children[i].get_path()} to dest={tmdb_directory.children[i].get_path()}')
+            self.xbmc.log(
+                f'Linked src={directory.children[i].get_path()} to dest={tmdb_directory.children[i].get_path()}',
+                level=self.xbmc.LOGDEBUG
+            )
 
 
 class Linker:
-    def __init__(self, movies_path, tv_shows_path, downloads_path, downloads_state_path, xbmc):
+    def __init__(
+            self,
+            movies_path,
+            tv_shows_path,
+            downloads_path,
+            downloads_state_path,
+            xbmc,
+            movie_linker,
+            episode_linker,
+            season_linker,
+            downloads_directory,
+            utils
+    ):
         self.movies_path = movies_path
         self.tv_shows_path = tv_shows_path
         self.downloads_path = downloads_path
-        self.movie_linker = MovieLinker(movies_path, MovieScanner(downloads_path))
-        self.episode_linker = TvShowLinker(tv_shows_path, TvShowEpisodeScanner(downloads_path))
-        self.season_linker = TvShowLinker(tv_shows_path, TvShowSeasonScanner(downloads_path))
-        self.downloads_directory = DownloadsDirectory(self.downloads_path, downloads_state_path)
-        self.logging = logging.getLogger(self.__class__.__name__)
+        self.downloads_state_path = downloads_state_path
+        self.movie_linker = movie_linker
+        self.episode_linker = episode_linker
+        self.season_linker = season_linker
+        self.downloads_directory = downloads_directory
         self.xbmc = xbmc
+        self.utils = utils
 
     def link(self):
-        player = self.xbmc.Player()
-        if player.isPlaying():
-            self.logging.debug('Kodi is playing. Skipping linker ...')
-            return
-
         if not self.downloads_directory.contains_changes():
-            self.logging.debug('No changes detected in the downloads directory.')
+            self.xbmc.log('No changes detected in the downloads directory.', level=self.xbmc.LOGDEBUG)
             return
 
-        prev_movies_descendants = Utils.get_all_descendants(self.movies_path)
-        prev_tv_shows_descendants = Utils.get_all_descendants(self.tv_shows_path)
+        prev_movies_descendants = self.utils.get_all_descendants(self.movies_path)
+        prev_tv_shows_descendants = self.utils.get_all_descendants(self.tv_shows_path)
 
-        Utils.init_directories(self.movies_path, self.tv_shows_path)
+        self.utils.init_directories(self.movies_path, self.tv_shows_path)
 
         self.movie_linker.link()
         self.episode_linker.link()
         self.season_linker.link()
 
-        next_movies_descendants = Utils.get_all_descendants(self.movies_path)
-        next_tv_shows_descendants = Utils.get_all_descendants(self.tv_shows_path)
+        next_movies_descendants = self.utils.get_all_descendants(self.movies_path)
+        next_tv_shows_descendants = self.utils.get_all_descendants(self.tv_shows_path)
 
-        # TODO: Add tests for clean and update behaviour
         deleted_movie_descendants = prev_movies_descendants.difference(next_movies_descendants)
         deleted_tv_shows_descendants = prev_tv_shows_descendants.difference(next_tv_shows_descendants)
         if len(deleted_movie_descendants) != 0 or len(deleted_tv_shows_descendants) != 0:
-            self.logging.info(f'deleted_movie_descendants={deleted_movie_descendants}')
-            self.logging.info(f'deleted_tv_shows_descendants={deleted_tv_shows_descendants}')
+            self.xbmc.log(f'deleted_movie_descendants={deleted_movie_descendants}', level=self.xbmc.LOGINFO)
+            self.xbmc.log(f'deleted_tv_shows_descendants={deleted_tv_shows_descendants}', level=self.xbmc.LOGINFO)
             self.xbmc.executebuiltin('CleanLibrary(video)')
 
         new_movie_descendants = next_movies_descendants.difference(prev_movies_descendants)
         new_tv_shows_descendants = next_tv_shows_descendants.difference(prev_tv_shows_descendants)
         if len(new_movie_descendants) != 0 or len(new_tv_shows_descendants) != 0:
-            self.logging.info(f'new_movie_descendants={new_movie_descendants}')
-            self.logging.info(f'new_tv_shows_descendants={new_tv_shows_descendants}')
+            self.xbmc.log(f'new_movie_descendants={new_movie_descendants}', level=self.xbmc.LOGINFO)
+            self.xbmc.log(f'new_tv_shows_descendants={new_tv_shows_descendants}', level=self.xbmc.LOGINFO)
             self.xbmc.executebuiltin('UpdateLibrary(video)')
 
         self.downloads_directory.update_state()
-        self.logging.debug('Updated state')
-
+        self.xbmc.log('Updated state', level=self.xbmc.LOGDEBUG)
