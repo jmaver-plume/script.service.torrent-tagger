@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/jmaver-plume/script.service.torrent-tagger/compare/v1.2.0...v1.3.0) (2023-01-29)
+
+
+### Features
+
+* Refactor script to a Kodi service add-on ([#9](https://github.com/jmaver-plume/script.service.torrent-tagger/issues/9)) ([9928db0](https://github.com/jmaver-plume/script.service.torrent-tagger/commit/9928db008d0a10db8b448bbe6e114a71002091b3))
+
 ## [1.2.0](https://github.com/jmaver-plume/libreelec-torrent-linker/compare/v1.1.0...v1.2.0) (2023-01-29)
 
 
