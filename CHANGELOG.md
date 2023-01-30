@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/jmaver-plume/script.service.torrent-tagger/compare/v1.3.0...v1.3.1) (2023-01-30)
+
+
+### Bug Fixes
+
+* Use correct default settings ([5b334bd](https://github.com/jmaver-plume/script.service.torrent-tagger/commit/5b334bd5234a7ac426c4c704bb6c1c63965c80d9))
+
 ## [1.3.0](https://github.com/jmaver-plume/script.service.torrent-tagger/compare/v1.2.0...v1.3.0) (2023-01-29)
 
 
