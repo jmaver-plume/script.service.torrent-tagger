@@ -4,7 +4,7 @@ import unittest
 from distutils.dir_util import copy_tree
 
 from resources.lib.linker import Linker, MovieLinker, MovieScanner, TvShowLinker, TvShowEpisodeScanner, \
-    DownloadsDirectory, Utils, TvShowSeasonScanner
+    DownloadsDirectory, Utils, TvShowSeasonScanner, Logger
 
 
 class MockXbmc:
@@ -29,17 +29,18 @@ class TestLinker(unittest.TestCase):
         self.movies_path = os.path.abspath('/tmp/directories/movies')
         self.tv_shows_path = os.path.abspath('/tmp/directories/tv_shows')
 
-        self.utils = Utils(MockXbmc)
+        self.logger = Logger(MockXbmc)
+        self.utils = Utils(self.logger)
         self.utils.safe_delete_directory(self.tv_shows_path)
         self.utils.safe_delete_directory(self.movies_path)
 
-        movie_scanner = MovieScanner(downloads_path, MockXbmc)
-        tv_show_episode_scanner = TvShowEpisodeScanner(downloads_path, MockXbmc)
-        tv_show_season_scanner = TvShowSeasonScanner(downloads_path, MockXbmc)
-        downloads_directory = DownloadsDirectory(downloads_path, self.downloads_state_path, MockXbmc)
-        movie_linker = MovieLinker(self.movies_path, movie_scanner, MockXbmc, self.utils)
-        episode_linker = TvShowLinker(self.tv_shows_path, tv_show_episode_scanner, MockXbmc, self.utils)
-        season_linker = TvShowLinker(self.tv_shows_path, tv_show_season_scanner, MockXbmc, self.utils)
+        movie_scanner = MovieScanner(downloads_path, self.logger)
+        tv_show_episode_scanner = TvShowEpisodeScanner(downloads_path, self.logger)
+        tv_show_season_scanner = TvShowSeasonScanner(downloads_path, self.logger)
+        downloads_directory = DownloadsDirectory(downloads_path, self.downloads_state_path, self.logger)
+        movie_linker = MovieLinker(self.movies_path, movie_scanner, self.logger, self.utils)
+        episode_linker = TvShowLinker(self.tv_shows_path, tv_show_episode_scanner, self.logger, self.utils)
+        season_linker = TvShowLinker(self.tv_shows_path, tv_show_season_scanner, self.logger, self.utils)
 
         self.linker = Linker(
             tv_shows_path=self.tv_shows_path,
@@ -47,6 +48,7 @@ class TestLinker(unittest.TestCase):
             movies_path=self.movies_path,
             downloads_state_path=self.downloads_state_path,
             xbmc=MockXbmc,
+            logger=self.logger,
             movie_linker=movie_linker,
             episode_linker=episode_linker,
             season_linker=season_linker,
