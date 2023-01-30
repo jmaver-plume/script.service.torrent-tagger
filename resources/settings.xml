@@ -2,9 +2,9 @@
 <settings>
     <category label="32001">
         <setting label="32002" id="tv_shows_path" type="text" default="/storage/tvshows"/>
-        <setting label="32003" id="movies_path" type="text" default="/storage/movies"/>
+        <setting label="32003" id="movies_path" type="text" default="/storage/videos"/>
         <setting label="32004" id="downloads_path" type="text" default="/storage/transmission/downloads/complete"/>
         <setting label="32005" id="downloads_state_path" type="text" default="/storage/.cache/.torrent-tagger"/>
-        <setting label="32006" id="interval_in_seconds" type="number" default="30"/>
+        <setting label="32006" id="interval_in_seconds" type="number" default="60"/>
     </category>
 </settings>
