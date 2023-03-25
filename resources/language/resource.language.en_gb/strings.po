@@ -39,3 +39,7 @@ msgstr ""
 msgctxt "#32006"
 msgid "Scan interval in seconds"
 msgstr ""
+
+msgctxt "#32007"
+msgid "Force resync"
+msgstr ""
