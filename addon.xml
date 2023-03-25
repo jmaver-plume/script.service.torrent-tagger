@@ -4,6 +4,7 @@
         <import addon="xbmc.python" version="3.0.0"/>
     </requires>
     <extension point="xbmc.service" library="service.py"/>
+    <extension point="xbmc.python.script" library="script.py"/>
     <extension point="xbmc.addon.metadata">
         <summary lang="en">This addon creates "symbolic link" directories with proper naming.</summary>
         <description lang="en">This addon creates "symbolic link" directories with proper naming.</description>
