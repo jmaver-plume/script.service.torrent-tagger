@@ -18,7 +18,7 @@ class MockXbmc:
 
     @staticmethod
     def executeJSONRPC(arg):
-        return {"result": {"tvshows": []}}
+        return '{"result": {"tvshows": []}}'
 
     @staticmethod
     def log(msg, level):
