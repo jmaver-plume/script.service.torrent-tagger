@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/jmaver-plume/script.service.torrent-tagger/compare/v1.3.1...v1.4.0) (2023-03-25)
+
+
+### Features
+
+* Remove empty tv shows from library ([b87e8df](https://github.com/jmaver-plume/script.service.torrent-tagger/commit/b87e8dfa03e1e5db98fc4dfbb9dcbfe718646fd2))
+
 ## [1.3.1](https://github.com/jmaver-plume/script.service.torrent-tagger/compare/v1.3.0...v1.3.1) (2023-01-30)
 
 
