@@ -468,9 +468,13 @@ class Linker:
         library_tv_shows = self.xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "id": 1}')
         for library_tv_show in library_tv_shows["result"]["tvshows"]:
             if library_tv_show["label"] in tv_shows:
+                self.logger.debug(f'{library_tv_show["label"]} is not empty.')
                 continue
             result = self.xbmc.executeJSONRPC(
-                f'{{"jsonrpc": "2.0", "method": "VideoLibrary.RemoveTVShow", "params": {{ "tvshowid": {5} }}, "id": 1}}')
+                f'{{"jsonrpc": "2.0", "method": "VideoLibrary.RemoveTVShow",'
+                '"params": {{ "tvshowid": {5} }}, "id": 1}}')
             if result["result"] != "ok":
                 self.logger.error(f'{library_tv_show["label"]} was not removed from the library.')
+            else:
+                self.logger.info(f'{library_tv_show["label"]} was removed, because it was empty.')
         self.downloads_directory.update_state()
