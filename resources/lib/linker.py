@@ -471,8 +471,8 @@ class Linker:
                 self.logger.debug(f'{library_tv_show["label"]} is not empty.')
                 continue
             result = self.xbmc.executeJSONRPC(
-                f'{{"jsonrpc": "2.0", "method": "VideoLibrary.RemoveTVShow",'
-                '"params": {{ "tvshowid": {5} }}, "id": 1}}')
+                '{{"jsonrpc": "2.0", "method": "VideoLibrary.RemoveTVShow",'
+                f'"params": {{ "tvshowid": {5} }}, "id": 1}}')
             if result["result"] != "ok":
                 self.logger.error(f'{library_tv_show["label"]} was not removed from the library.')
             else:
