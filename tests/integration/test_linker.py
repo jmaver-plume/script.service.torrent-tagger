@@ -10,10 +10,15 @@ from resources.lib.linker import Linker, MovieLinker, MovieScanner, TvShowLinker
 class MockXbmc:
     LOGDEBUG = 1
     LOGINFO = 1
+    LOGERROR = 1
 
     @staticmethod
     def executebuiltin(arg):
         pass
+
+    @staticmethod
+    def executeJSONRPC(arg):
+        return { "result": { "tvshows": []}}
 
     @staticmethod
     def log(msg, level):

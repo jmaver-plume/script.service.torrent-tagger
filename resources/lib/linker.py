@@ -45,6 +45,11 @@ class Utils:
                 descendants.append(os.path.join(root, descendant))
         return set(sorted(descendants))
 
+    @staticmethod
+    def get_all_videos(directory):
+        videos = [_dir for _dir in os.listdir(directory) if os.path.isdir(os.path.join(directory, _dir))]
+        return videos
+
 
 class DownloadsDirectory:
     def __init__(self, downloads_path, state_path, logger):
@@ -123,6 +128,9 @@ class Logger:
 
     def info(self, msg):
         self._log(msg, level=self.xbmc.LOGINFO)
+
+    def error(self, msg):
+        self._log(msg, level=self.xbmc.LOGERROR)
 
     def _log(self, msg, level):
         self.xbmc.log(f"[script.service.torrent-tagger] {msg}", level=level)
@@ -429,6 +437,16 @@ class Linker:
         next_movies_descendants = self.utils.get_all_descendants(self.movies_path)
         next_tv_shows_descendants = self.utils.get_all_descendants(self.tv_shows_path)
 
+        self._clean_library(prev_movies_descendants, next_movies_descendants, prev_tv_shows_descendants,
+                            next_tv_shows_descendants)
+        self._update_library(prev_movies_descendants, next_movies_descendants, prev_tv_shows_descendants,
+                             next_tv_shows_descendants)
+        self._clean_empty_tv_shows()
+        self.downloads_directory.update_state()
+        self.logger.debug('Updated state')
+
+    def _clean_library(self, prev_movies_descendants, next_movies_descendants, prev_tv_shows_descendants,
+                       next_tv_shows_descendants):
         deleted_movie_descendants = prev_movies_descendants.difference(next_movies_descendants)
         deleted_tv_shows_descendants = prev_tv_shows_descendants.difference(next_tv_shows_descendants)
         if len(deleted_movie_descendants) != 0 or len(deleted_tv_shows_descendants) != 0:
@@ -436,6 +454,8 @@ class Linker:
             self.logger.info(f'deleted_tv_shows_descendants={deleted_tv_shows_descendants}')
             self.xbmc.executebuiltin('CleanLibrary(video)')
 
+    def _update_library(self, prev_movies_descendants, next_movies_descendants, prev_tv_shows_descendants,
+                        next_tv_shows_descendants):
         new_movie_descendants = next_movies_descendants.difference(prev_movies_descendants)
         new_tv_shows_descendants = next_tv_shows_descendants.difference(prev_tv_shows_descendants)
         if len(new_movie_descendants) != 0 or len(new_tv_shows_descendants) != 0:
@@ -443,5 +463,14 @@ class Linker:
             self.logger.info(f'new_tv_shows_descendants={new_tv_shows_descendants}')
             self.xbmc.executebuiltin('UpdateLibrary(video)')
 
+    def _clean_empty_tv_shows(self):
+        tv_shows = self.utils.get_all_videos(self.tv_shows_path)
+        library_tv_shows = self.xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "id": 1}')
+        for library_tv_show in library_tv_shows["result"]["tvshows"]:
+            if library_tv_show["label"] in tv_shows:
+                continue
+            result = self.xbmc.executeJSONRPC(
+                f'{{"jsonrpc": "2.0", "method": "VideoLibrary.RemoveTVShow", "params": {{ "tvshowid": {5} }}, "id": 1}}')
+            if result["result"] != "ok":
+                self.logger.error(f'{library_tv_show["label"]} was not removed from the library.')
         self.downloads_directory.update_state()
-        self.logger.debug('Updated state')
