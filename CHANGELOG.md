@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.0](https://github.com/jmaver-plume/script.service.torrent-tagger/compare/v1.4.0...v1.5.0) (2023-03-25)
+
+
+### Features
+
+* Add a button to manually trigger a resync ([#15](https://github.com/jmaver-plume/script.service.torrent-tagger/issues/15)) ([6561728](https://github.com/jmaver-plume/script.service.torrent-tagger/commit/65617289a383214e76b91347f0be54cc60d55f8d))
+* Update version ([8f8bbbd](https://github.com/jmaver-plume/script.service.torrent-tagger/commit/8f8bbbddeb8e24b9277e608ae2cbe8e36e9ebfce))
+
 ## [1.4.0](https://github.com/jmaver-plume/script.service.torrent-tagger/compare/v1.3.1...v1.4.0) (2023-03-25)
 
 
