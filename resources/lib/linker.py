@@ -2,6 +2,7 @@ import hashlib
 import os
 import re
 import shutil
+import json
 from abc import ABC, abstractmethod
 
 
@@ -61,6 +62,9 @@ class DownloadsDirectory:
         saved_state = self.get_saved_state()
         current_state = self.get_current_state()
         return current_state != saved_state
+
+    def clear_state(self):
+        os.remove(self.state_path)
 
     def update_state(self):
         current_state = self.get_current_state()
@@ -406,7 +410,8 @@ class Linker:
             episode_linker,
             season_linker,
             downloads_directory,
-            utils
+            utils,
+            force_resync=False
     ):
         self.movies_path = movies_path
         self.tv_shows_path = tv_shows_path
@@ -419,11 +424,14 @@ class Linker:
         self.xbmc = xbmc
         self.logger = logger
         self.utils = utils
+        self.force_sync = force_resync
 
     def link(self):
+        if self.force_sync:
+            self.downloads_directory.clear_state()
+
         if not self.downloads_directory.contains_changes():
             self.logger.debug('No changes detected in the downloads directory.')
-            return
 
         prev_movies_descendants = self.utils.get_all_descendants(self.movies_path)
         prev_tv_shows_descendants = self.utils.get_all_descendants(self.tv_shows_path)
@@ -450,8 +458,8 @@ class Linker:
         deleted_movie_descendants = prev_movies_descendants.difference(next_movies_descendants)
         deleted_tv_shows_descendants = prev_tv_shows_descendants.difference(next_tv_shows_descendants)
         if len(deleted_movie_descendants) != 0 or len(deleted_tv_shows_descendants) != 0:
-            self.logger.info(f'deleted_movie_descendants={deleted_movie_descendants}')
-            self.logger.info(f'deleted_tv_shows_descendants={deleted_tv_shows_descendants}')
+            self.logger.debug(f'deleted_movie_descendants={deleted_movie_descendants}')
+            self.logger.debug(f'deleted_tv_shows_descendants={deleted_tv_shows_descendants}')
             self.xbmc.executebuiltin('CleanLibrary(video)')
 
     def _update_library(self, prev_movies_descendants, next_movies_descendants, prev_tv_shows_descendants,
@@ -459,22 +467,30 @@ class Linker:
         new_movie_descendants = next_movies_descendants.difference(prev_movies_descendants)
         new_tv_shows_descendants = next_tv_shows_descendants.difference(prev_tv_shows_descendants)
         if len(new_movie_descendants) != 0 or len(new_tv_shows_descendants) != 0:
-            self.logger.info(f'new_movie_descendants={new_movie_descendants}')
-            self.logger.info(f'new_tv_shows_descendants={new_tv_shows_descendants}')
+            self.logger.debug(f'new_movie_descendants={new_movie_descendants}')
+            self.logger.debug(f'new_tv_shows_descendants={new_tv_shows_descendants}')
             self.xbmc.executebuiltin('UpdateLibrary(video)')
 
     def _clean_empty_tv_shows(self):
         tv_shows = self.utils.get_all_videos(self.tv_shows_path)
-        library_tv_shows = self.xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "id": 1}')
+        get_tv_shows_body = '{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "id": 1}'
+        library_tv_shows = json.loads(self.xbmc.executeJSONRPC(get_tv_shows_body))
         for library_tv_show in library_tv_shows["result"]["tvshows"]:
-            if library_tv_show["label"] in tv_shows:
+            label = library_tv_show["label"]
+            if label in tv_shows or (any(label in tv_show for tv_show in tv_shows) and not (label in tv_shows)):
                 self.logger.debug(f'{library_tv_show["label"]} is not empty.')
                 continue
-            result = self.xbmc.executeJSONRPC(
-                '{{"jsonrpc": "2.0", "method": "VideoLibrary.RemoveTVShow",'
-                f'"params": {{ "tvshowid": {5} }}, "id": 1}}')
-            if result["result"] != "ok":
+            self.logger.debug(f'{library_tv_show["label"]} is empty.')
+            remove_tv_show_body = json.dumps({
+                "jsonrpc": "2.0",
+                "method": "VideoLibrary.RemoveTVShow",
+                "params": {"tvshowid": library_tv_show["tvshowid"]},
+                "id": 1
+            })
+            result = json.loads(self.xbmc.executeJSONRPC(remove_tv_show_body))
+            if result["result"] != "OK":
                 self.logger.error(f'{library_tv_show["label"]} was not removed from the library.')
+                self.logger.error(result)
             else:
-                self.logger.info(f'{library_tv_show["label"]} was removed, because it was empty.')
+                self.logger.debug(f'{library_tv_show["label"]} was removed, because it was empty.')
         self.downloads_directory.update_state()

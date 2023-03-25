@@ -6,5 +6,6 @@
         <setting label="32004" id="downloads_path" type="text" default="/storage/transmission/downloads/complete"/>
         <setting label="32005" id="downloads_state_path" type="text" default="/storage/.cache/.torrent-tagger"/>
         <setting label="32006" id="interval_in_seconds" type="number" default="60"/>
+        <setting label="32007" type="action" action="RunScript(script.service.torrent-tagger, script)"/>
     </category>
 </settings>
