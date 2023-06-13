@@ -103,18 +103,6 @@ class TestLinker(unittest.TestCase):
 
         os.remove(self.downloads_state_path)
 
-    @unittest.skip('Not implemented')
-    def test_should_quit_early_downloads_state_is_the_same(self):
-        pass
-
-    @unittest.skip('Not implemented')
-    def test_should_call_kodi_library_cleanup_if_old_deleted(self):
-        pass
-
-    @unittest.skip('Not implemented')
-    def test_should_call_kodi_library_update_if_new_added(self):
-        pass
-
 
 if __name__ == '__main__':
     unittest.main()

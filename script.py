@@ -44,7 +44,7 @@ def main():
     )
 
     logger.debug('Running linker!')
-    linker.link()
+    linker.force_link()
 
 
 if __name__ == '__main__':

@@ -4,6 +4,7 @@ import re
 import shutil
 import json
 from abc import ABC, abstractmethod
+import traceback
 
 
 # Utils
@@ -64,6 +65,8 @@ class DownloadsDirectory:
         return current_state != saved_state
 
     def clear_state(self):
+        if not os.path.exists(self.state_path):
+            return None
         os.remove(self.state_path)
 
     def update_state(self):
@@ -360,8 +363,14 @@ class AbstractLinker(ABC):
         self.utils = utils
 
     def link(self):
+        errors = []
         for directory in self.scanner.scan():
-            self._link_directory(directory)
+            try:
+                self._link_directory(directory)
+            except Exception as e:
+                errors.append(traceback.format_exc())
+
+        return errors
 
     @abstractmethod
     def _link_directory(self, directory):
@@ -427,9 +436,6 @@ class Linker:
         self.force_sync = force_resync
 
     def link(self):
-        if self.force_sync:
-            self.downloads_directory.clear_state()
-
         if not self.downloads_directory.contains_changes():
             self.logger.debug('No changes detected in the downloads directory.')
 
@@ -438,9 +444,10 @@ class Linker:
 
         self.utils.init_directories(self.movies_path, self.tv_shows_path)
 
-        self.movie_linker.link()
-        self.episode_linker.link()
-        self.season_linker.link()
+        movie_errors = self.movie_linker.link()
+        episode_errors = self.episode_linker.link()
+        season_errors = self.season_linker.link()
+        all_errors = movie_errors + episode_errors + season_errors
 
         next_movies_descendants = self.utils.get_all_descendants(self.movies_path)
         next_tv_shows_descendants = self.utils.get_all_descendants(self.tv_shows_path)
@@ -452,6 +459,31 @@ class Linker:
         self._clean_empty_tv_shows()
         self.downloads_directory.update_state()
         self.logger.debug('Updated state')
+
+        if len(all_errors) == 0:
+            return
+
+        self.logger.error(all_errors)
+
+    def force_link(self):
+        self.downloads_directory.clear_state()
+        self.utils.init_directories(self.movies_path, self.tv_shows_path)
+
+        movie_errors = self.movie_linker.link()
+        episode_errors = self.episode_linker.link()
+        season_errors = self.season_linker.link()
+        all_errors = movie_errors + episode_errors + season_errors
+
+        self.xbmc.executebuiltin('CleanLibrary(video)')
+        self.xbmc.executebuiltin('UpdateLibrary(video)')
+
+        self._clean_empty_tv_shows()
+        self.downloads_directory.update_state()
+
+        if len(all_errors) == 0:
+            return
+
+        self.logger.error(all_errors)
 
     def _clean_library(self, prev_movies_descendants, next_movies_descendants, prev_tv_shows_descendants,
                        next_tv_shows_descendants):
